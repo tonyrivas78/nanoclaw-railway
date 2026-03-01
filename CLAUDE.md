@@ -28,7 +28,7 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 | `/setup` | First-time installation, authentication, service configuration |
 | `/customize` | Adding channels, integrations, changing behavior |
 | `/debug` | Container issues, logs, troubleshooting |
-| `/update` | Pull upstream NanoClaw changes, merge with customizations, run migrations |
+| `/update-nanoclaw` | Bring upstream NanoClaw updates into a customized install |
 | `/qodo-pr-resolver` | Fetch and fix Qodo PR review issues interactively or in batch |
 | `/get-qodo-rules` | Load org- and repo-level coding rules from Qodo before code tasks |
 | `/add-skill` | Install a skill for agents (local + container) with optional MCP server |
