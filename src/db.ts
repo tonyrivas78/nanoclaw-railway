@@ -404,6 +404,24 @@ export function getLastBotMessageTimestamp(
   return row?.ts ?? undefined;
 }
 
+/**
+ * Get all messages in a specific thread (both user and bot messages).
+ * Returns the full thread conversation for context.
+ */
+export function getThreadMessages(
+  chatJid: string,
+  threadId: string,
+): NewMessage[] {
+  const sql = `
+    SELECT id, chat_jid, sender, sender_name, content, timestamp, thread_id
+    FROM messages
+    WHERE chat_jid = ? AND thread_id = ?
+      AND content != '' AND content IS NOT NULL
+    ORDER BY timestamp
+  `;
+  return db.prepare(sql).all(chatJid, threadId) as NewMessage[];
+}
+
 export function createTask(
   task: Omit<ScheduledTask, 'last_run' | 'last_result'>,
 ): void {

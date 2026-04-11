@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 
 import { google, gmail_v1 } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
+type OAuth2Client = InstanceType<(typeof google.auth)['OAuth2']>;
 
 // isMain flag is used instead of MAIN_GROUP_FOLDER constant
 import { logger } from '../logger.js';
@@ -83,7 +83,8 @@ export class GmailChannel implements Channel {
       this.oauth2Client.setCredentials(tokens);
 
       // Persist refreshed tokens to file
-      this.oauth2Client.on('tokens', (newTokens) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.oauth2Client.on('tokens', (newTokens: any) => {
         try {
           const current = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
           Object.assign(current, newTokens);

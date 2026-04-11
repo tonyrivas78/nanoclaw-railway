@@ -5,6 +5,7 @@ import { OneCLI } from '@onecli-sh/sdk';
 
 import {
   ASSISTANT_NAME,
+  CREDENTIAL_PROXY_PORT,
   DEFAULT_TRIGGER,
   getTriggerPattern,
   GROUPS_DIR,
@@ -27,9 +28,11 @@ import {
   writeGroupsSnapshot,
   writeTasksSnapshot,
 } from './container-runner.js';
+import { startCredentialProxy } from './credential-proxy.js';
 import {
   cleanupOrphans,
   ensureContainerRuntimeRunning,
+  PROXY_BIND_HOST,
 } from './container-runtime.js';
 import {
   getAllChats,
@@ -95,13 +98,13 @@ function ensureOneCLIAgent(jid: string, group: RegisteredGroup): void {
   if (group.isMain) return;
   const identifier = group.folder.toLowerCase().replace(/_/g, '-');
   onecli.ensureAgent({ name: group.name, identifier }).then(
-    (res) => {
+    (res: { created: boolean }) => {
       logger.info(
         { jid, identifier, created: res.created },
         'OneCLI agent ensured',
       );
     },
-    (err) => {
+    (err: unknown) => {
       logger.debug(
         { jid, identifier, err: String(err) },
         'OneCLI agent ensure skipped',
@@ -270,7 +273,7 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     const threadMsgs = getThreadMessages(chatJid, latestMsg.thread_id);
     const recent = getMessagesSince(
       chatJid,
-      sinceTimestamp,
+      getOrRecoverCursor(chatJid),
       ASSISTANT_NAME,
     ).slice(-5);
     prompt = formatThreadWithContext(threadMsgs, recent);
