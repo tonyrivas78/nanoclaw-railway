@@ -8,6 +8,7 @@ import { ASSISTANT_NAME, TRIGGER_PATTERN } from '../config.js';
 import { readEnvFile } from '../env.js';
 import { resolveGroupFolderPath } from '../group-folder.js';
 import { logger } from '../logger.js';
+import { transcribeAudio, downloadToTemp } from '../transcription.js';
 import { registerChannel, ChannelOpts } from './registry.js';
 import {
   Channel,
@@ -308,9 +309,53 @@ export class TelegramChannel implements Channel {
         filename: `video_${ctx.message.message_id}`,
       });
     });
-    this.bot.on('message:voice', (ctx) => {
-      storeMedia(ctx, '[Voice message]', {
-        fileId: ctx.message.voice?.file_id,
+    this.bot.on('message:voice', async (ctx) => {
+      const chatJid = `tg:${ctx.chat.id}`;
+      const group = this.opts.registeredGroups()[chatJid];
+      if (!group) return;
+
+      const fileId = ctx.message.voice?.file_id;
+      if (!fileId) {
+        storeMedia(ctx, '[Voice message]');
+        return;
+      }
+
+      // Try to transcribe the voice note
+      try {
+        const file = await this.bot!.api.getFile(fileId);
+        if (file.file_path) {
+          const fileUrl = `https://api.telegram.org/file/bot${this.botToken}/${file.file_path}`;
+          const tmpPath = await downloadToTemp(fileUrl, '.ogg');
+          if (tmpPath) {
+            const transcript = await transcribeAudio(tmpPath);
+            // Clean up temp file
+            try { fs.unlinkSync(tmpPath); } catch {}
+
+            if (transcript) {
+              // Deliver as text message with voice tag
+              const timestamp = new Date(ctx.message.date * 1000).toISOString();
+              const senderName = ctx.from?.first_name || ctx.from?.username || 'Unknown';
+              this.opts.onMessage(chatJid, {
+                id: ctx.message.message_id.toString(),
+                chat_jid: chatJid,
+                sender: ctx.from?.id?.toString() || '',
+                sender_name: senderName,
+                content: `[Voice: ${transcript}]`,
+                timestamp,
+                is_from_me: false,
+              });
+              logger.info({ chatJid, chars: transcript.length }, 'Voice note transcribed');
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        logger.error({ err }, 'Voice transcription failed, falling back to placeholder');
+      }
+
+      // Fallback if transcription fails
+      storeMedia(ctx, '[Voice message - transcription unavailable]', {
+        fileId,
         filename: `voice_${ctx.message.message_id}`,
       });
     });
