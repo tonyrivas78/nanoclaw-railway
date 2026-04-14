@@ -15,6 +15,7 @@ import {
   ONECLI_URL,
   POLL_INTERVAL,
   SLACK_MAIN_CHANNEL_ID,
+  TELEGRAM_MAIN_CHAT_ID,
   TIMEZONE,
 } from './config.js';
 import './channels/index.js';
@@ -810,6 +811,18 @@ async function main(): Promise<void> {
       logger.info(
         { channelId: SLACK_MAIN_CHANNEL_ID },
         'Using SLACK_MAIN_CHANNEL_ID for main group',
+      );
+    }
+
+    // Priority 1.5: TELEGRAM_MAIN_CHAT_ID — directly register a Telegram chat as main
+    if (!mainJid && TELEGRAM_MAIN_CHAT_ID) {
+      mainJid = TELEGRAM_MAIN_CHAT_ID.startsWith('tg:')
+        ? TELEGRAM_MAIN_CHAT_ID
+        : `tg:${TELEGRAM_MAIN_CHAT_ID}`;
+      mainName = ASSISTANT_NAME;
+      logger.info(
+        { chatId: TELEGRAM_MAIN_CHAT_ID },
+        'Using TELEGRAM_MAIN_CHAT_ID for main group',
       );
     }
 
