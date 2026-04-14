@@ -628,7 +628,9 @@ async function main(): Promise<void> {
     }
   }
 
-  ensureContainerSystemRunning();
+  if (!IS_RAILWAY) {
+    ensureContainerSystemRunning();
+  }
   initDatabase();
   logger.info('Database initialized');
   loadState();
