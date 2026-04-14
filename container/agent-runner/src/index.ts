@@ -22,6 +22,11 @@ import {
   HookCallback,
   PreCompactHookInput,
 } from '@anthropic-ai/claude-agent-sdk';
+
+/** Minimal type for PreToolUse hook input (removed from SDK exports) */
+interface PreToolUseHookInput {
+  tool_input: Record<string, unknown>;
+}
 import { fileURLToPath } from 'url';
 
 interface ContainerInput {
