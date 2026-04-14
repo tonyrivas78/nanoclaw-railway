@@ -317,6 +317,10 @@ export class TelegramChannel implements Channel {
       const fileId = ctx.message.voice?.file_id;
       const timestamp = new Date(ctx.message.date * 1000).toISOString();
       const senderName = ctx.from?.first_name || ctx.from?.username || 'Unknown';
+      const isGroup = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
+
+      // Ensure chat exists in DB before storing messages (foreign key constraint)
+      this.opts.onChatMetadata(chatJid, timestamp, undefined, 'telegram', isGroup);
 
       const deliverText = (content: string) => {
         this.opts.onMessage(chatJid, {
